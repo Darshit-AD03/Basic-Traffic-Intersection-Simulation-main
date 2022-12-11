@@ -3,12 +3,14 @@ import time
 import threading
 import pygame
 import sys
+import math
 
 # Default values of signal timers
-defaultGreen = {0:10, 1:10, 2:10, 3:10}
+defaultGreen = {0:3, 1:3, 2:3, 3:3}
 defaultRed = 150
 defaultYellow = 5
 
+vehicleInALane = {0:0, 1:0, 2:0, 3:0}
 signals = []
 noOfSignals = 4
 currentGreen = 0   # Indicates which signal is green currently
@@ -18,7 +20,7 @@ currentYellow = 0   # Indicates whether yellow signal is on or off
 speeds = {'car':2.25, 'bus':1.8, 'truck':1.8, 'bike':2.5}  # average speeds of vehicles
 
 # Coordinates of vehicles' start
-x = {'right':[0,0,0], 'down':[755,727,697], 'left':[1400,1400,1400], 'up':[602,627,657]}    
+x = {'right':[0,0,0], 'down':[755,727,697], 'left':[1400,1400,1400], 'up':[602,627,657]} 
 y = {'right':[348,370,398], 'down':[0,0,0], 'left':[498,466,436], 'up':[800,800,800]}
 
 vehicles = {'right': {0:[], 1:[], 2:[], 'crossed':0}, 'down': {0:[], 1:[], 2:[], 'crossed':0}, 'left': {0:[], 1:[], 2:[], 'crossed':0}, 'up': {0:[], 1:[], 2:[], 'crossed':0}}
@@ -78,7 +80,7 @@ class Vehicle(pygame.sprite.Sprite):
             
         # Set new starting and stopping coordinate
         if(direction=='right'):
-            temp = self.image.get_rect().width + stoppingGap    
+            temp = self.image.get_rect().width + stoppingGap
             x[direction][lane] -= temp
         elif(direction=='left'):
             temp = self.image.get_rect().width + stoppingGap
@@ -110,7 +112,7 @@ class Vehicle(pygame.sprite.Sprite):
             if(self.crossed==0 and self.x<stopLines[self.direction]):
                 self.crossed = 1
             if((self.x>=self.stop or self.crossed == 1 or (currentGreen==2 and currentYellow==0)) and (self.index==0 or self.x>(vehicles[self.direction][self.lane][self.index-1].x + vehicles[self.direction][self.lane][self.index-1].image.get_rect().width + movingGap))):                
-                self.x -= self.speed   
+                self.x -= self.speed
         elif(self.direction=='up'):
             if(self.crossed==0 and self.y<stopLines[self.direction]):
                 self.crossed = 1
@@ -145,13 +147,13 @@ def repeat():
     currentYellow = 0   # set yellow signal off
     
      # reset all signal times of current signal to default times
-    signals[currentGreen].green = defaultGreen[currentGreen]
+    signals[currentGreen].green = math.sqrt(4*3*vehicleInALane[currentGreen])
     signals[currentGreen].yellow = defaultYellow
     signals[currentGreen].red = defaultRed
-       
+    vehicleInALane[currentGreen] = 0
     currentGreen = nextGreen # set next signal as green signal
     nextGreen = (currentGreen+1)%noOfSignals    # set next green signal
-    signals[nextGreen].red = signals[currentGreen].yellow+signals[currentGreen].green    # set the red time of next to next signal as (yellow time + green time) of next signal
+    signals[nextGreen].red = int(signals[currentGreen].yellow+signals[currentGreen].green) + 1   # set the red time of next to next signal as (yellow time + green time) of next signal
     repeat()  
 
 # Update values of the signal timers after every second
@@ -175,12 +177,16 @@ def generateVehicles():
         dist = [25,50,75,100]
         if(temp<dist[0]):
             direction_number = 0
+            vehicleInALane[0] = vehicleInALane[0] + 1
         elif(temp<dist[1]):
             direction_number = 1
+            vehicleInALane[1] = vehicleInALane[1] + 1
         elif(temp<dist[2]):
             direction_number = 2
+            vehicleInALane[2] = vehicleInALane[2] + 1
         elif(temp<dist[3]):
             direction_number = 3
+            vehicleInALane[3] = vehicleInALane[3] + 1
         Vehicle(lane_number, vehicleTypes[vehicle_type], direction_number, directionNumbers[direction_number])
         time.sleep(1)
 
@@ -226,7 +232,7 @@ class Main:
                     signals[i].signalText = signals[i].yellow
                     screen.blit(yellowSignal, signalCoods[i])
                 else:
-                    signals[i].signalText = signals[i].green
+                    signals[i].signalText = int(signals[i].green)
                     screen.blit(greenSignal, signalCoods[i])
             else:
                 if(signals[i].red<=10):
